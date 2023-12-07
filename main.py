@@ -8,25 +8,7 @@ bot = QQBot(**data)
 bot.send_message('start pushing')
 
 
-def push(dynamic):
-    # with open('output.json', mode='w') as f:
-    #     f.write(json.dumps(dynamic, ensure_ascii=False))
-    type = dynamic['desc']['type']
-    user_name = dynamic['desc']['user_profile']['info']['uname']
-    if dynamic['desc']['type'] == 8:
-        # video
-        title = dynamic['card']['title']
-        desc = dynamic['card']['desc']
-        message = '{}发布了视频\n标题：{}\n简介：{}'.format(user_name, title, desc)
-    elif dynamic['desc']['type'] == 4:
-        # messege
-        content = dynamic['card']['item']['content']
-        message = '{}发布了文字\n内容：{}'.format(user_name, content)
-    elif dynamic['desc']['type'] == 2:
-        # image
-        message = '{}发布了图片'.format(user_name)
-    else:
-        message = '{}发布了未知类型[{}]的动态'.format(user_name, type)
+def push(message):
     bot.send_message(message)
 
 
