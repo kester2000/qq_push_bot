@@ -1,47 +1,65 @@
-import time
+from asyncio import sleep
 from bilibili_api import user, sync
 
 
-async def check_update(u: user.User, info, callback, last_dynamics):
-    offset = 0
+class UserList:
+    class Agent:
+        def __init__(self, uid, u: user.User, info, dynamics):
+            self.uid = uid
+            self.u = u
+            self.info = info
+            self.dynamics = dynamics
 
-    dynamics = []
+    def __init__(self, uid_list, callback=print, sleep_time=10):
+        self.uid_list = uid_list
+        self.callback = callback
+        self.sleep_time = sleep_time
+        self._all = []
 
-    loop = True
-    while loop:
-        page = await u.get_dynamics(offset)
+    async def _get_all_dynamics(self, u: user.User):
+        offset = 0
+        dynamics = []
+        while True:
+            page = await u.get_dynamics(offset)
+            if 'cards' in page:
+                dynamics.extend(page['cards'])
+            if page['has_more'] != 1:
+                break
+            offset = page['next_offset']
 
-        now_dynamics = page.get('cards', None)
-        if now_dynamics:
-            for dynamic in now_dynamics:
-                if dynamic['desc']['rid'] not in map(lambda x: x['desc']['rid'], last_dynamics):
-                    dynamics.append(dynamic)
-                    if last_dynamics:
-                        callback(dynamic)
-                        loop = False
-                    pass
+        return dynamics
 
-        if not loop:
-            break
+    async def _get_new_dynamics(self, agent: Agent):
+        offset = 0
+        while True:
+            page = await agent.u.get_dynamics(offset)
+            if 'cards' in page:
+                for card in page['cards']:
+                    if card['desc']['rid'] not in map(lambda x: x['desc']['rid'], agent.dynamics):
+                        self.callback(card)
+                    else:
+                        return
+            if page['has_more'] != 1:
+                break
+            offset = page['next_offset']
 
-        if page['has_more'] != 1:
-            if not last_dynamics:
-                print('user {} init len {}'.format(info['name'], len(dynamics)))
-            break
+    async def _loop(self):
+        for id in self.uid_list:
+            u = user.User(id)
+            info = await u.get_user_info()
+            dynamics = await self._get_all_dynamics(u)
+            print('user {} has {} dynamics'.format(
+                info['name'], len(dynamics)))
+            self._all.append(self.Agent(id, u, info, dynamics))
+        while True:
+            for agent in self._all:
+                await self._get_new_dynamics(agent)
+            await sleep(self.sleep_time)
 
-        offset = page['next_offset']
-
-    return dynamics+last_dynamics
-
-
-async def user_loop(user_id, callback=print, sleep_time=10):
-    u = user.User(user_id)
-    info = await u.get_user_info()
-    dynamics = []
-    while True:
-        dynamics = await check_update(u, info, callback, dynamics)
-        time.sleep(sleep_time)
+    def run_loop(self):
+        sync(self._loop())
 
 
 if __name__ == '__main__':
-    sync(user_loop(23119645))
+    user_list = UserList([23119645, 1583832354])
+    user_list.run_loop()
