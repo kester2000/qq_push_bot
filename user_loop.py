@@ -26,7 +26,8 @@ async def check_update(u: user.User, info, callback, last_dynamics):
             break
 
         if page['has_more'] != 1:
-            print('user {} init len {}'.format(info['name'], len(dynamics)))
+            if not last_dynamics:
+                print('user {} init len {}'.format(info['name'], len(dynamics)))
             break
 
         offset = page['next_offset']
