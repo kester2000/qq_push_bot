@@ -9,7 +9,6 @@ async def check_update(u: user.User, info, callback, last_dynamics):
 
     loop = True
     while loop:
-        # 获取该页动态
         page = await u.get_dynamics(offset)
 
         now_dynamics = page.get('cards', None)
