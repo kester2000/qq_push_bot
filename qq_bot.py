@@ -64,10 +64,9 @@ class QQBot:
         data = {
             'content': message
         }
-        for guild in bot.get_guilds():
-            for channel in bot.get_channels(guild['id']):
+        for guild in self.get_guilds():
+            for channel in self.get_channels(guild['id']):
                 if channel['name'] == CHANNEL_NAME:
-                    print(channel['id'], channel['name'])
                     url = API_URL+'/channels/{}/messages'.format(channel['id'])
                     response = requests.post(url, headers=headers, data=data)
                     pass

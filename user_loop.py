@@ -10,7 +10,7 @@ class UserList:
             self.info = info
             self.dynamics = dynamics
 
-    def __init__(self, uid_list, callback=print, sleep_time=10):
+    def __init__(self, uid_list, callback=print, sleep_time=5):
         self.uid_list = uid_list
         self.callback = callback
         self.sleep_time = sleep_time
@@ -34,9 +34,10 @@ class UserList:
         while True:
             page = await agent.u.get_dynamics(offset)
             if 'cards' in page:
-                for card in page['cards']:
-                    if card['desc']['rid'] not in map(lambda x: x['desc']['rid'], agent.dynamics):
-                        self.callback(card)
+                for dynamic in page['cards']:
+                    if dynamic['desc']['rid'] not in map(lambda x: x['desc']['rid'], agent.dynamics):
+                        self.callback(dynamic)
+                        agent.dynamics.append(dynamic)
                     else:
                         return
             if page['has_more'] != 1:
