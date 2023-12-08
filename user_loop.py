@@ -1,5 +1,6 @@
 from asyncio import sleep
 from bilibili_api import user, sync
+import json
 
 
 class UserList:
@@ -33,8 +34,9 @@ class UserList:
                     if dynamic['desc']['rid'] in map(lambda x: x['desc']['rid'], agent.dynamics):
                         return
                     agent.dynamics.append(dynamic)
-                    # with open('output.json', mode='w') as f:
-                    #     f.write(json.dumps(dynamic, ensure_ascii=False))
+                    with open('qq_bot.log', mode='a+') as f:
+                        f.write(str(dynamic))
+                        f.write('\n')
                     type = dynamic['desc']['type']
                     user_name = dynamic['desc']['user_profile']['info']['uname']
                     if dynamic['desc']['type'] == 8:

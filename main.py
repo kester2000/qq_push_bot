@@ -9,6 +9,10 @@ bot.send_message('start pushing')
 
 
 def push(message):
+    print(message)
+    with open('qq_bot.log', mode='a+') as f:
+        f.write(message)
+        f.write('\n')
     bot.send_message(message)
 
 
@@ -20,4 +24,4 @@ try:
     user_list.run_loop()
 except Exception as e:
     message = f'Error: {e}'
-    bot.send_message(message)
+    push(message)
