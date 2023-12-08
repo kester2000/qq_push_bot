@@ -16,17 +16,12 @@ class UserList:
         self.sleep_time = sleep_time
         self._all = []
 
-    async def _get_all_dynamics(self, u: user.User):
+    async def _get_first_page(self, u: user.User):
         offset = 0
         dynamics = []
-        while True:
-            page = await u.get_dynamics(offset)
-            if 'cards' in page:
-                dynamics.extend(page['cards'])
-            if page['has_more'] != 1:
-                break
-            offset = page['next_offset']
-
+        page = await u.get_dynamics(offset)
+        if 'cards' in page:
+            dynamics.extend(page['cards'])
         return dynamics
 
     async def _get_new_dynamics(self, agent: Agent):
@@ -66,8 +61,8 @@ class UserList:
         for id in self.uid_list:
             u = user.User(id)
             info = await u.get_user_info()
-            dynamics = await self._get_all_dynamics(u)
-            print('user {} has {} dynamics'.format(
+            dynamics = await self._get_first_page(u)
+            print('user {} load {} dynamics'.format(
                 info['name'], len(dynamics)))
             self._all.append(self.Agent(id, u, info, dynamics))
         while True:
