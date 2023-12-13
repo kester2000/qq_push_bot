@@ -22,14 +22,23 @@ class MyClient(botpy.Client):
                     _log.info(f"respone: {respone}")
 
     async def on_ready(self):
-        with open('user_list.txt') as f:
-            uid_list = list(map(int, f.read().split()))
-        user_list = UserList(
-            uid_list, callback=self.post_message, need_wait=True, logger=_log.info)
-        user_list.start_loop()
-        await self.post_message("start pushing")
+        self.user_list = UserList(
+            'user_list.txt', callback=self.post_message, need_wait=True, logger=_log.info)
+        await self.user_list.load()
+        self.user_list.start_loop()
 
     async def on_at_message_create(self, message: Message):
+        _log.info(f"on_at_message_create: {message.content}")
+        if '/关注列表' in message.content:
+            await message.reply(content=self.user_list.get_list())
+        elif '/添加' in message.content:
+            try:
+                uid = int(message.content.split(' ')[-1])
+                await self.user_list.add_uid(uid)
+                await message.reply(content=f'{self.user_list.get_name_by_uid(uid)}添加成功')
+            except Exception as e:
+                _log.info(f"{e}")
+                await message.reply(content=f'添加失败')
         pass
 
 

@@ -1,6 +1,5 @@
-from asyncio import ensure_future, sleep
-from bilibili_api import user, sync
-import json
+import asyncio
+from bilibili_api import user
 
 
 class UserList:
@@ -11,8 +10,10 @@ class UserList:
             self.info = info
             self.dynamics = dynamics
 
-    def __init__(self, uid_list, sleep_time=5, callback=print, need_wait=False, logger=print):
-        self.uid_list = uid_list
+    def __init__(self, uid_file, sleep_time=5, callback=print, need_wait=False, logger=print):
+        self.uid_file = uid_file
+        with open(uid_file, 'r') as f:
+            self.uid_list = list(map(int, f.read().split()))
         self.sleep_time = sleep_time
         self.callback = callback
         self.need_wait = need_wait
@@ -62,26 +63,56 @@ class UserList:
                 break
             offset = page['next_offset']
 
-    async def _loop(self):
+    async def _add(self, uid):
+        assert all(uid != agent.uid for agent in self._all)
+        u = user.User(uid)
+        info = await u.get_user_info()
+        dynamics = await self._get_first_page(u)
+        self.logger('user {} load {} dynamics'.format(
+            info['name'], len(dynamics)))
+        self._all.append(self.Agent(uid, u, info, dynamics))
+
+    def save(self):
+        str = '\n'.join(f'{agent.uid}' for agent in self._all)
+        with open(self.uid_file, 'w') as f:
+            f.write(str)
+
+    async def load(self):
         for id in self.uid_list:
-            u = user.User(id)
-            info = await u.get_user_info()
-            dynamics = await self._get_first_page(u)
-            self.logger('user {} load {} dynamics'.format(
-                info['name'], len(dynamics)))
-            self._all.append(self.Agent(id, u, info, dynamics))
+            await self._add(id)
+
+    async def _loop(self):
         while True:
             for agent in self._all:
                 await self._get_new_dynamics(agent)
-            await sleep(self.sleep_time)
-
-    def run_loop(self):
-        sync(self._loop())
+            await asyncio.sleep(self.sleep_time)
 
     def start_loop(self):
-        ensure_future(self._loop())
+        asyncio.ensure_future(self._loop())
+
+    def get_list(self):
+        l = ['{} {}'.format(agent.uid, agent.info['name'])
+             for agent in self._all]
+        return '\n'.join(l)
+
+    def get_name_by_uid(self, uid):
+        for agent in self._all:
+            if agent.uid == uid:
+                return agent.info['name']
+        return None
+
+    async def add_uid(self, uid):
+        await self._add(uid)
+        self.save()
 
 
 if __name__ == '__main__':
-    user_list = UserList([23119645, 1583832354])
-    user_list.run_loop()
+
+    async def main():
+        user_list = UserList('user_list.txt')
+        await user_list.load()
+        user_list.start_loop()
+        while True:
+            pass
+
+    asyncio.run(main())
