@@ -1,4 +1,3 @@
-import asyncio
 import botpy
 import os
 from user_loop import UserList
