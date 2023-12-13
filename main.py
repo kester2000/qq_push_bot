@@ -14,25 +14,25 @@ class MyClient(botpy.Client):
     async def post_message(self, content):
         guilds = await self.api.me_guilds()
         for guild in guilds:
-            # channels = await self.api.get_channels(guild["id"])
-            # for channel in channels:
-            #     if channel["name"] == CHANNEL_NAME:
-            #         _log.info(f"post_message: {content}")
-            #         respone = await self.api.post_message(channel["id"], content)
-            #         _log.info(f"respone: {respone}")
-            members = await self.api.get_guild_members(guild["id"])
-            for member in members:
-                _log.info(f"post_message: {content}")
-                dms = await self.api.create_dms(guild["id"], member["user"]["id"])
-                respone = await self.api.post_dms(dms["guild_id"], content)
-                _log.info(f"respone: {respone}")
+            channels = await self.api.get_channels(guild["id"])
+            for channel in channels:
+                if channel["name"] == CHANNEL_NAME:
+                    _log.info(f"post_message: {content}")
+                    respone = await self.api.post_message(channel["id"], content)
+                    _log.info(f"channel respone: {respone}")
+                    if respone["code"] != 304023:
+                        members = await self.api.get_guild_members(guild["id"])
+                        for member in members:
+                            dms = await self.api.create_dms(guild["id"], member["user"]["id"])
+                            respone = await self.api.post_dms(dms["guild_id"], content)
+                            _log.info(f"member respone: {respone}")
 
     async def on_ready(self):
         self.user_list = UserList(
             'user_list.txt', callback=self.post_message, need_wait=True, logger=_log.info)
         await self.user_list.load()
         self.user_list.start_loop()
-
+        await self.post_message('1')
 
     async def on_at_message_create(self, message: Message):
         _log.info(f"on_at_message_create: {message.content}")
