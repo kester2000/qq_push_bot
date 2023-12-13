@@ -32,7 +32,6 @@ class MyClient(botpy.Client):
             'user_list.txt', callback=self.post_message, need_wait=True, logger=_log.info)
         await self.user_list.load()
         self.user_list.start_loop()
-        await self.post_message('1')
 
     async def on_at_message_create(self, message: Message):
         _log.info(f"on_at_message_create: {message.content}")
