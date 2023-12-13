@@ -1,4 +1,4 @@
-from asyncio import sleep
+from asyncio import ensure_future, sleep
 from bilibili_api import user, sync
 import json
 
@@ -11,10 +11,12 @@ class UserList:
             self.info = info
             self.dynamics = dynamics
 
-    def __init__(self, uid_list, callback=print, sleep_time=5):
+    def __init__(self, uid_list, sleep_time=5, callback=print, need_wait=False, logger=print):
         self.uid_list = uid_list
-        self.callback = callback
         self.sleep_time = sleep_time
+        self.callback = callback
+        self.need_wait = need_wait
+        self.logger = logger
         self._all = []
 
     async def _get_first_page(self, u: user.User):
@@ -34,9 +36,7 @@ class UserList:
                     if dynamic['desc']['rid'] in map(lambda x: x['desc']['rid'], agent.dynamics):
                         return
                     agent.dynamics.append(dynamic)
-                    with open('qq_bot.log', mode='a+') as f:
-                        f.write(str(dynamic))
-                        f.write('\n')
+                    self.logger(f'dynamics: {dynamic}')
                     type = dynamic['desc']['type']
                     user_name = dynamic['desc']['user_profile']['info']['uname']
                     if dynamic['desc']['type'] == 8:
@@ -54,7 +54,10 @@ class UserList:
                         message = '{}发布了图片'.format(user_name)
                     else:
                         message = '{}发布了未知类型[{}]的动态'.format(user_name, type)
-                    self.callback(message)
+                    if self.need_wait:
+                        await self.callback(message)
+                    else:
+                        self.callback(message)
             if page['has_more'] != 1:
                 break
             offset = page['next_offset']
@@ -64,7 +67,7 @@ class UserList:
             u = user.User(id)
             info = await u.get_user_info()
             dynamics = await self._get_first_page(u)
-            print('user {} load {} dynamics'.format(
+            self.logger('user {} load {} dynamics'.format(
                 info['name'], len(dynamics)))
             self._all.append(self.Agent(id, u, info, dynamics))
         while True:
@@ -74,6 +77,9 @@ class UserList:
 
     def run_loop(self):
         sync(self._loop())
+
+    def start_loop(self):
+        ensure_future(self._loop())
 
 
 if __name__ == '__main__':
