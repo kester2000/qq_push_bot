@@ -44,12 +44,12 @@ class UserList:
                         # video
                         title = dynamic['card']['title']
                         desc = dynamic['card']['desc']
-                        message = '{}发布了视频\n标题：{}\n简介：{}'.format(
+                        message = '{}发布了视频，标题：{}，简介：{}'.format(
                             user_name, title, desc)
                     elif dynamic['desc']['type'] == 4:
                         # messege
                         content = dynamic['card']['item']['content']
-                        message = '{}发布了文字\n内容：{}'.format(user_name, content)
+                        message = '{}发布了文字，内容：{}'.format(user_name, content)
                     elif dynamic['desc']['type'] == 2:
                         # image
                         message = '{}发布了图片'.format(user_name)
