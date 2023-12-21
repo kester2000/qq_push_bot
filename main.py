@@ -3,6 +3,7 @@ import os
 from user_loop import UserList
 from botpy import logging
 from botpy.message import Message
+from botpy.types.message import MarkdownPayload, MessageMarkdownParams
 from botpy.ext.cog_yaml import read
 
 CHANNEL_NAME = '聊天室'
@@ -12,26 +13,27 @@ test_config = read(os.path.join(os.path.dirname(__file__), "config.yaml"))
 
 class MyClient(botpy.Client):
     async def post_message(self, content):
+        params = [
+            MessageMarkdownParams(key="title", values=["New"]),
+            MessageMarkdownParams(key="content", values=[content]),
+        ]
+        markdown = MarkdownPayload(
+            custom_template_id="102078331_1702986277", params=params)
         guilds = await self.api.me_guilds()
         for guild in guilds:
             channels = await self.api.get_channels(guild["id"])
             for channel in channels:
                 if channel["name"] == CHANNEL_NAME:
                     _log.info(f"post_message: {content}")
-                    respone = await self.api.post_message(channel["id"], content)
+                    respone = await self.api.post_message(channel["id"], markdown=markdown)
                     _log.info(f"channel respone: {respone}")
-                    if respone["code"] != 304023:
-                        members = await self.api.get_guild_members(guild["id"])
-                        for member in members:
-                            dms = await self.api.create_dms(guild["id"], member["user"]["id"])
-                            respone = await self.api.post_dms(dms["guild_id"], content)
-                            _log.info(f"member respone: {respone}")
 
     async def on_ready(self):
         self.user_list = UserList(
             'user_list.txt', callback=self.post_message, need_wait=True, logger=_log.info)
         await self.user_list.load()
         self.user_list.start_loop()
+        await self.post_message("hello")
 
     async def on_at_message_create(self, message: Message):
         _log.info(f"on_at_message_create: {message.content}")
